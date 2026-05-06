@@ -1,0 +1,4 @@
+requests
+squareconnect
+google-api-python-client
+google-auth
