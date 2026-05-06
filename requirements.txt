@@ -1,4 +1,4 @@
+python-dotenv
+gspread
 requests
-squareconnect
-google-api-python-client
-google-auth
+squareup

@@ -1,52 +1,64 @@
 import os
 from datetime import datetime
-# You would import your service wrappers here
-# from services.squarespace import SquarespaceClient
-# from services.square import SquareClient
-# from services.google_sheets import GoogleSheetsClient
+from dotenv import load_dotenv
+
+# service wrappers
+from services.squarespace_service import SquarespaceClient
+from services.square_service import SquareClient
+from services.google_sheets_service import GoogleSheetsClient
 
 def fetch_and_log_sales():
-    """
-    Main logic to fetch from Square/Squarespace and push to Sheets.
-    """
-    print("Starting sales data collection...")
+    print("Initializing clients...")
     
     # 1. Initialize Clients (Pseudocode for now)
-    # ss_client = SquarespaceClient(api_key=os.getenv('SQUARESPACE_KEY'))
-    # sq_client = SquareClient(access_token=os.getenv('SQUARE_TOKEN'))
-    # gs_client = GoogleSheetsClient(credentials_path='service_account.json')
+    ss_client = SquarespaceClient(api_key=os.getenv('SQUARESPACE_KEY'))
+    sq_client = SquareClient(access_token=os.getenv('SQUARE_TOKEN'))
+    gs_client = GoogleSheetsClient(credentials_path=os.getenv('GOOGLE_APPLICATION_CREDENTIALS'))
 
-    # 2. Fetch Data
-    # For Squarespace, you'll likely fetch orders since the last sync date
-    # ss_orders = ss_client.get_orders(modifiedAfter='2023-10-01T00:00:00Z')
+    # For Squarespace, fetch orders since the last sync date
+    print("Fetching sales data from Squarespace...")
+    ss_orders = ss_client.get_orders(modified_after='2023-10-01T00:00:00Z')
     
-    # For Square, you'll use the SearchOrders endpoint
-    # sq_orders = sq_client.search_orders(location_ids=['YOUR_LOCATION_ID'])
+    # For Square, use the SearchOrders endpoint
+    print("Fetching sales data from Square...")
+    location_id = os.getenv('SQUARE_LOCATION_ID')
+    sq_orders = sq_client.search_orders(location_ids=[location_id]) if location_id else []
 
-    # 3. Normalize Data
     all_sales = []
     
-    # Example normalization loop
-    # for order in ss_orders:
-    #     all_sales.append([
-    #         order['createdOn'], 
-    #         order['grandTotal']['value'], 
-    #         'Squarespace', 
-    #         order['orderNumber']
-    #     ])
+    print(f"Normalizing {len(ss_orders)} Squarespace orders...")
+    for order in ss_orders:
+        all_sales.append([
+            order['createdOn'], 
+            order['grandTotal']['value'], 
+            'Squarespace', 
+            order['orderNumber']
+        ])
 
-    # 4. Append to Google Sheets
-    # if all_sales:
-    #     gs_client.append_rows(spreadsheet_id='YOUR_SHEET_ID', rows=all_sales)
-    #     print(f"Successfully logged {len(all_sales)} sales.")
-    # else:
-    #     print("No new sales found.")
+    print(f"Normalizing {len(sq_orders)} Square orders...")
+    for order in sq_orders:
+        # In the latest SDK, order data is accessed via attributes
+        amount = float(order.total_money.amount or 0) / 100 if order.total_money else 0.0
+        all_sales.append([
+            order.created_at,
+            f"{amount:.2f}",
+            'Square',
+            order.id
+        ])
+
+    if not all_sales:
+        print("No new sales found. Google sheet was unaffected.")
+        return
+
+    print(f"Appending {len(all_sales)} sales to Google Sheets...")
+    all_sales.append([datetime.now().strftime("%Y-%m-%d"), "0.00", "Test Source", "TEST-ID"])
+    
+    gs_client.append_rows(spreadsheet_id=os.getenv('GOOGLE_SHEET_ID'), rows=all_sales)
+    print(f"Successfully logged {len(all_sales)} sales.")
 
 if __name__ == "__main__":
-    # In a real scenario, use python-dotenv to load vars
-    # from dotenv import load_dotenv
-    # load_dotenv()
+    # Load environment variables from .env file
+    load_dotenv()
     
-    # For now, this is a placeholder for your automation logic
     print("JAMN Sales Tracker Initialized.")
-    # fetch_and_log_sales()
+    fetch_and_log_sales()
