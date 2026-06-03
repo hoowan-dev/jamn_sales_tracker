@@ -69,6 +69,10 @@ class ItemType(Enum):
         else:
             return ItemType.Unknown
         
+    def fromVenmo(venmoStr):
+        # TODO - implement
+        return ItemType.Unknown
+        
 class Size(Enum):
     ExtraSmall = 1
     Small = 2
@@ -125,8 +129,10 @@ class Size(Enum):
             return Size.ExtraExtraLarge
         else:
             return Size.Unknown
-
-
+        
+    def fromVenmo(venmoStr):
+        # TODO - implement
+        return Size.Unknown
 
 def formatDate(dateStr, transactionPlatform):
     if transactionPlatform == TransactionPlatform.Squarespace:
@@ -135,18 +141,23 @@ def formatDate(dateStr, transactionPlatform):
     elif transactionPlatform == TransactionPlatform.Square:
         dt = datetime.strptime(dateStr[:10], "%Y-%m-%d")
         return f"{dt.day}{dt.strftime('%b%Y')}"
+    elif transactionPlatform == TransactionPlatform.Venmo:
+        # TODO - implement
+        return dateStr
     else:
         return dateStr
     
 def getEarnings(retailPrice, transactionPlatform):
+    transactionFee = 0.0
+
     if transactionPlatform == TransactionPlatform.Squarespace:
         transactionFee = (retailPrice * .029) + 0.30
-        return max(retailPrice - transactionFee, 0.00)
     elif transactionPlatform == TransactionPlatform.Square:
         transactionFee = (retailPrice * .026) + 0.15
-        return max(retailPrice - transactionFee, 0.00)
-    else:
-        return retailPrice
+    elif transactionPlatform == TransactionPlatform.Venmo:
+        transactionFee = (retailPrice * 0.019) + 0.10
+
+    return max(retailPrice - transactionFee, 0.00)
 
 def generateRowsData(date, transaction_platform, t_shirt_type, size, retail_price, earnings, comments = ""):
     # format is as follows:

@@ -7,6 +7,7 @@ import formatting.sheets_formatter as sf
 from services.squarespace_service import SquarespaceClient
 from services.square_service import SquareClient
 from services.google_sheets_service import GoogleSheetsClient
+# from services.venmo_service import VenmoClient
 
 def fetch_and_log_sales():
     print("Initializing clients...")
@@ -25,6 +26,11 @@ def fetch_and_log_sales():
     print("Fetching sales data from Square...")
     location_id = os.getenv('SQUARE_LOCATION_ID')
     sq_orders = sq_client.search_orders(location_ids=[location_id]) if location_id else []
+
+    # For Venmo, do something
+    print("Fetching sales data from Venmo...")
+    # TODO - implement
+    vm_orders = []
 
     all_sales = []
     
@@ -68,6 +74,9 @@ def fetch_and_log_sales():
 
             entry = sf.generateRowsData(date, transaction_platform, t_shirt_type, size, retail_price, earnings, comments)
             all_sales.append(entry)
+
+    print(f"Normalizing {len(vm_orders)} Venmo orders...") 
+    # TODO - implement
 
     if not all_sales:
         print("No new sales found. Google sheet was unaffected.")
