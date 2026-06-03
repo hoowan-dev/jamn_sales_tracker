@@ -30,23 +30,17 @@ def fetch_and_log_sales():
     
     print(f"Normalizing {len(ss_orders)} Squarespace orders...")
     for order in ss_orders:
-        date = order['createdOn']
-        transaction_platform = sf.TransactionPlatform.Squarespace
-        t_shirt_type = sf.ItemType.RideWithMeTee # TODO - fix
-        size = sf.Size.Small # TODO - fix
-        retail_price = order['grandTotal']['value']
-        earnings = retail_price # TODO - fix
-        comments = "Generated from Squarespace API and jamn_sales_tracker"
+        for lineItem in order['lineItems']:
+            date = sf.formatDate(order['createdOn'], sf.TransactionPlatform.Squarespace)
+            transaction_platform = sf.TransactionPlatform.Squarespace
+            t_shirt_type = sf.ItemType.fromSquarespace(lineItem['productName'])
+            size = sf.Size.fromSquarespace(lineItem['variantOptions'][0]['value'])
+            retail_price = lineItem['unitPricePaid']['value']
+            earnings = retail_price # TODO - assume no markup for now
+            comments = "Generated from Squarespace API and jamn_sales_tracker"
 
-        entry = sf.generateRowsData(date, transaction_platform, t_shirt_type, size, retail_price, earnings, comments)
-        all_sales.append(entry)
-
-        # all_sales.append([
-        #     order['createdOn'], 
-        #     order['grandTotal']['value'], 
-        #     'Squarespace', 
-        #     order['orderNumber']
-        # ])
+            entry = sf.generateRowsData(date, transaction_platform, t_shirt_type, size, retail_price, earnings, comments)
+            all_sales.append(entry)
 
     print(f"Normalizing {len(sq_orders)} Square orders...")
     for order in sq_orders:
@@ -57,7 +51,7 @@ def fetch_and_log_sales():
                 t_shirt_type = sf.ItemType.fromSquare(line_item.name)
                 size = sf.Size.fromSquare(line_item.variation_name)
                 retail_price = f"{float(line_item.gross_sales_money.amount / 100):.2f}"
-                earnings = retail_price # assume no scraped fee
+                earnings = retail_price # TODO - assume no markup for now
                 comments = "Generated from Square API and jamn_sales_tracker"
 
                 entry = sf.generateRowsData(date, transaction_platform, t_shirt_type, size, retail_price, earnings, comments)

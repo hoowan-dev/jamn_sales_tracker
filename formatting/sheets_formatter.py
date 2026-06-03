@@ -58,13 +58,13 @@ class ItemType(Enum):
 
     def fromSquarespace(squarespaceStr):
         # TODO - implement
-        if squarespaceStr == "Ride With Me":
+        if squarespaceStr == "JAMN RIde With Me Graphic Tee":
             return ItemType.RideWithMeTee
-        elif squarespaceStr == "Ringer Tee":
+        elif squarespaceStr == "JAMN Strawberry Ringer Tee":
             return ItemType.RingerTee
-        elif squarespaceStr == "Musical Strawberries":
+        elif squarespaceStr == "JAMN Like Damn The Music Band Graphic Tee":
             return ItemType.StrawberriesTee
-        elif squarespaceStr == "Sticker":
+        elif squarespaceStr == "JAMN Sticker Pack":
             return ItemType.Sticker
         else:
             return ItemType.Unknown
@@ -111,13 +111,27 @@ class Size(Enum):
             return Size.Unknown
     
     def fromSquarespace(squarespaceStr):
-        # TODO - implement
-        return squarespaceStr
+        if squarespaceStr == "XS":
+            return Size.ExtraSmall
+        elif squarespaceStr == "S":
+            return Size.Small
+        elif squarespaceStr == "M":
+            return Size.Medium
+        elif squarespaceStr == "L":
+            return Size.Large
+        elif squarespaceStr == "XL":
+            return Size.ExtraLarge
+        elif squarespaceStr == "XXL":
+            return Size.ExtraExtraLarge
+        else:
+            return Size.Unknown
+
+
 
 def formatDate(dateStr, transactionPlatform):
     if transactionPlatform == TransactionPlatform.Squarespace:
-        # TODO - implement
-        return dateStr
+        dt = datetime.strptime(dateStr[:10], "%Y-%m-%d")
+        return f"{dt.day}{dt.strftime('%b%Y')}"
     elif transactionPlatform == TransactionPlatform.Square:
         dt = datetime.strptime(dateStr[:10], "%Y-%m-%d")
         return f"{dt.day}{dt.strftime('%b%Y')}"
@@ -127,5 +141,5 @@ def formatDate(dateStr, transactionPlatform):
 def generateRowsData(date, transaction_platform, t_shirt_type, size, retail_price, earnings, comments = ""):
     # format is as follows:
     # Transaction Date, Transation Platform, T-Shirt Type, Size, Retail Price, Earnings, Comments
-    # 15Jan2026, Square (Card), Ringer Tee, Small (S), Retail Price, Earnings, Comments
+    # 15Jan2026, Square (Card), Ringer Tee, Small (S), 25.00, 24.43, Generated from Square API and jamn_sales_tracker
     return [date, transaction_platform.toString(), t_shirt_type.toString(), size.toString(), retail_price, earnings, comments]
