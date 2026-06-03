@@ -152,4 +152,4 @@ def generateRowsData(date, transaction_platform, t_shirt_type, size, retail_pric
     # format is as follows:
     # Transaction Date, Transation Platform, T-Shirt Type, Size, Retail Price, Earnings, Comments
     # 15Jan2026, Square (Card), Ringer Tee, Small (S), 25.00, 24.43, Generated from Square API and jamn_sales_tracker
-    return [date, transaction_platform.toString(), t_shirt_type.toString(), size.toString(), retail_price, earnings, comments]
+    return [date, transaction_platform.toString(), t_shirt_type.toString(), size.toString(), f"{retail_price:.2f}", f"{earnings:.2f}", comments]
