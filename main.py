@@ -1,6 +1,7 @@
 import os
 from datetime import datetime, timezone
 from dotenv import load_dotenv
+import formatting.sheets_formatter as sf
 
 # service wrappers
 from services.squarespace_service import SquarespaceClient
@@ -10,7 +11,7 @@ from services.google_sheets_service import GoogleSheetsClient
 def fetch_and_log_sales():
     print("Initializing clients...")
     
-    # 1. Initialize Clients (Pseudocode for now)
+    # 1. Initialize Clients
     ss_client = SquarespaceClient(api_key=os.getenv('SQUARESPACE_KEY'))
     sq_client = SquareClient(access_token=os.getenv('SQUARE_TOKEN'))
     gs_client = GoogleSheetsClient(credentials_path=os.getenv('GOOGLE_APPLICATION_CREDENTIALS'))
@@ -29,32 +30,63 @@ def fetch_and_log_sales():
     
     print(f"Normalizing {len(ss_orders)} Squarespace orders...")
     for order in ss_orders:
-        all_sales.append([
-            order['createdOn'], 
-            order['grandTotal']['value'], 
-            'Squarespace', 
-            order['orderNumber']
-        ])
+        date = order['createdOn']
+        transaction_platform = sf.TransactionPlatform.Squarespace
+        t_shirt_type = sf.ItemType.RideWithMeTee # TODO - fix
+        size = sf.Size.Small # TODO - fix
+        retail_price = order['grandTotal']['value']
+        earnings = retail_price # TODO - fix
+        comments = "Generated from Squarespace API and jamn_sales_tracker"
+
+        entry = sf.generateRowsData(date, transaction_platform, t_shirt_type, size, retail_price, earnings, comments)
+        all_sales.append(entry)
+
+        # all_sales.append([
+        #     order['createdOn'], 
+        #     order['grandTotal']['value'], 
+        #     'Squarespace', 
+        #     order['orderNumber']
+        # ])
 
     print(f"Normalizing {len(sq_orders)} Square orders...")
     for order in sq_orders:
-        # In the latest SDK, order data is accessed via attributes
-        amount = float(order.total_money.amount or 0) / 100 if order.total_money else 0.0
-        all_sales.append([
-            order.created_at,
-            f"{amount:.2f}",
-            'Square',
-            order.id
-        ])
+        if order.line_items:
+            for line_item in order.line_items:
+                date = sf.formatDate(order.created_at, sf.TransactionPlatform.Square)
+                transaction_platform = sf.TransactionPlatform.Square
+                t_shirt_type = sf.ItemType.fromSquare(line_item.name)
+                size = sf.Size.fromSquare(line_item.variation_name)
+                retail_price = f"{float(line_item.gross_sales_money.amount / 100):.2f}"
+                earnings = retail_price # assume no scraped fee
+                comments = "Generated from Square API and jamn_sales_tracker"
+
+                entry = sf.generateRowsData(date, transaction_platform, t_shirt_type, size, retail_price, earnings, comments)
+                all_sales.append(entry)
+        else:
+            # uncatagorized transaction
+            amount = float(order.total_money.amount or 0) / 100 if order.total_money else 0.0
+
+            date = sf.formatDate(order.created_at, sf.TransactionPlatform.Square)
+            transaction_platform = sf.TransactionPlatform.Square
+            t_shirt_type = sf.ItemType.Unknown
+            size = sf.Size.Unknown
+            retail_price = f"{amount:.2f}"
+            earnings = retail_price
+            comments = "Generated from Square API and jamn_sales_tracker"
+
+            entry = sf.generateRowsData(date, transaction_platform, t_shirt_type, size, retail_price, earnings, comments)
+            all_sales.append(entry)
 
     if not all_sales:
         print("No new sales found. Google sheet was unaffected.")
         return
 
     print(f"Appending {len(all_sales)} sales to Google Sheets...")
-    all_sales.append([datetime.now().strftime("%Y-%m-%d"), "0.00", "Test Source", "TEST-ID"])
-    
-    gs_client.append_rows(spreadsheet_id=os.getenv('GOOGLE_SHEET_ID'), rows=all_sales)
+
+    for row in all_sales:
+        print(row)
+
+    # gs_client.append_rows(spreadsheet_id=os.getenv('GOOGLE_SHEET_ID'), rows=all_sales)
     print(f"Successfully logged {len(all_sales)} sales.")
 
 if __name__ == "__main__":
