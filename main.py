@@ -35,8 +35,9 @@ def fetch_and_log_sales():
             transaction_platform = sf.TransactionPlatform.Squarespace
             t_shirt_type = sf.ItemType.fromSquarespace(lineItem['productName'])
             size = sf.Size.fromSquarespace(lineItem['variantOptions'][0]['value'])
-            retail_price = lineItem['unitPricePaid']['value']
-            earnings = retail_price # TODO - assume no markup for now
+            retail_float = float(lineItem['unitPricePaid']['value'])
+            retail_price = f"{retail_float:.2f}"
+            earnings = f"{sf.getEarnings(retail_float, sf.TransactionPlatform.Squarespace):.2f}"
             comments = "Generated from Squarespace API and jamn_sales_tracker"
 
             entry = sf.generateRowsData(date, transaction_platform, t_shirt_type, size, retail_price, earnings, comments)
@@ -50,22 +51,22 @@ def fetch_and_log_sales():
                 transaction_platform = sf.TransactionPlatform.Square
                 t_shirt_type = sf.ItemType.fromSquare(line_item.name)
                 size = sf.Size.fromSquare(line_item.variation_name)
-                retail_price = f"{float(line_item.gross_sales_money.amount / 100):.2f}"
-                earnings = retail_price # TODO - assume no markup for now
+                retail_float = float(line_item.gross_sales_money.amount / 100)
+                retail_price = f"{retail_float:.2f}"
+                earnings = f"{sf.getEarnings(retail_float, sf.TransactionPlatform.Square):.2f}"
                 comments = "Generated from Square API and jamn_sales_tracker"
 
                 entry = sf.generateRowsData(date, transaction_platform, t_shirt_type, size, retail_price, earnings, comments)
                 all_sales.append(entry)
         else:
             # uncatagorized transaction
-            amount = float(order.total_money.amount or 0) / 100 if order.total_money else 0.0
-
             date = sf.formatDate(order.created_at, sf.TransactionPlatform.Square)
             transaction_platform = sf.TransactionPlatform.Square
             t_shirt_type = sf.ItemType.Unknown
             size = sf.Size.Unknown
-            retail_price = f"{amount:.2f}"
-            earnings = retail_price
+            retail_float = float(order.total_money.amount or 0) / 100 if order.total_money else 0.0
+            retail_price = f"{retail_float:.2f}"
+            earnings = f"{sf.getEarnings(retail_float, sf.TransactionPlatform.Square):.2f}"
             comments = "Generated from Square API and jamn_sales_tracker"
 
             entry = sf.generateRowsData(date, transaction_platform, t_shirt_type, size, retail_price, earnings, comments)

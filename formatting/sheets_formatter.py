@@ -137,6 +137,16 @@ def formatDate(dateStr, transactionPlatform):
         return f"{dt.day}{dt.strftime('%b%Y')}"
     else:
         return dateStr
+    
+def getEarnings(retailPrice, transactionPlatform):
+    if transactionPlatform == TransactionPlatform.Squarespace:
+        transactionFee = (retailPrice * .029) + 0.30
+        return max(retailPrice - transactionFee, 0.00)
+    elif transactionPlatform == TransactionPlatform.Square:
+        transactionFee = (retailPrice * .026) + 0.15
+        return max(retailPrice - transactionFee, 0.00)
+    else:
+        return retailPrice
 
 def generateRowsData(date, transaction_platform, t_shirt_type, size, retail_price, earnings, comments = ""):
     # format is as follows:
