@@ -1,5 +1,5 @@
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from dotenv import load_dotenv
 
 # service wrappers
@@ -17,7 +17,8 @@ def fetch_and_log_sales():
 
     # For Squarespace, fetch orders since the last sync date
     print("Fetching sales data from Squarespace...")
-    ss_orders = ss_client.get_orders(modified_after='2023-10-01T00:00:00Z')
+    current_time_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    ss_orders = ss_client.get_orders(modified_after='2023-10-01T00:00:00Z', modified_before=current_time_iso)
     
     # For Square, use the SearchOrders endpoint
     print("Fetching sales data from Square...")

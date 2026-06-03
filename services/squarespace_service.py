@@ -13,15 +13,18 @@ class SquarespaceClient:
             "User-Agent": "JAMN-Sales-Tracker/1.0"
         }
 
-    def get_orders(self, modified_after=None):
+    def get_orders(self, modified_after=None, modified_before=None):
         """
         Fetches orders from Squarespace.
         
         :param modified_after: ISO 8601 formatted string (e.g., '2023-10-01T00:00:00Z')
+        :param modified_before: ISO 8601 formatted string (e.g., '2023-10-31T23:59:59Z')
         """
         params = {}
         if modified_after:
             params['modifiedAfter'] = modified_after
+        if modified_before:
+            params['modifiedBefore'] = modified_before
             
         response = requests.get(self.base_url, headers=self.headers, params=params)
         
