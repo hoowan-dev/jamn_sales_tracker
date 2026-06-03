@@ -1,4 +1,5 @@
 from enum import Enum
+from datetime import datetime
 
 class TransactionPlatform(Enum):
     Cash = 1
@@ -118,8 +119,8 @@ def formatDate(dateStr, transactionPlatform):
         # TODO - implement
         return dateStr
     elif transactionPlatform == TransactionPlatform.Square:
-        # TODO - implement
-        return dateStr
+        dt = datetime.strptime(dateStr[:10], "%Y-%m-%d")
+        return f"{dt.day}{dt.strftime('%b%Y')}"
     else:
         return dateStr
 
