@@ -42,7 +42,7 @@ class ItemType(Enum):
         elif self == ItemType.Sticker:
             return "Sticker"
         else:
-            return "Unknown"    
+            return "Unknown"
         
     def fromSquare(squareStr):
         if squareStr == "RIDE WITH ME TEE":
@@ -57,7 +57,6 @@ class ItemType(Enum):
             return ItemType.Unknown
 
     def fromSquarespace(squarespaceStr):
-        # TODO - implement
         if squarespaceStr == "JAMN RIde With Me Graphic Tee":
             return ItemType.RideWithMeTee
         elif squarespaceStr == "JAMN Strawberry Ringer Tee":
@@ -103,7 +102,7 @@ class Size(Enum):
             return Size.ExtraSmall
         elif squareStr == "Small (S)":
             return Size.Small
-        elif squareStr == "Medium (M)":
+        elif squareStr == "Regular" or squareStr == "Medium (M)":
             return Size.Medium
         elif squareStr == "Large (L)":
             return Size.Large
@@ -148,6 +147,10 @@ def formatDate(dateStr, transactionPlatform):
         return dateStr
     
 def getEarnings(retailPrice, transactionPlatform):
+    if retailPrice == 0.0:
+        return 0.0
+
+    # note - transaction fees are estimates
     transactionFee = 0.0
 
     if transactionPlatform == TransactionPlatform.Squarespace:
@@ -157,7 +160,7 @@ def getEarnings(retailPrice, transactionPlatform):
     elif transactionPlatform == TransactionPlatform.Venmo:
         transactionFee = (retailPrice * 0.019) + 0.10
 
-    return max(retailPrice - transactionFee, 0.00)
+    return max(retailPrice - transactionFee, 0.01)
 
 def generateRowsData(date, transaction_platform, t_shirt_type, size, retail_price, earnings, comments = ""):
     # format is as follows:

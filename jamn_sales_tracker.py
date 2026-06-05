@@ -7,33 +7,22 @@ import formatting.sheets_formatter as sf
 from services.squarespace_service import SquarespaceClient
 from services.square_service import SquareClient
 from services.google_sheets_service import GoogleSheetsClient
-# from services.venmo_service import VenmoClient
+from services.venmo_service import VenmoClient
 
-def fetch_and_log_sales():
+def fetch_sales():
     print("Initializing clients...")
     
     # 1. Initialize Clients
     ss_client = SquarespaceClient(api_key=os.getenv('SQUARESPACE_KEY'))
     sq_client = SquareClient(access_token=os.getenv('SQUARE_TOKEN'))
-    gs_client = GoogleSheetsClient(credentials_path=os.getenv('GOOGLE_APPLICATION_CREDENTIALS'))
+    # vm_client = VenmoClient(access_token=os.getenv('VENMO_ACCESS_TOKEN'))
+
+    all_sales = []
 
     # For Squarespace, fetch orders since the last sync date
     print("Fetching sales data from Squarespace...")
     current_time_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     ss_orders = ss_client.get_orders(modified_after='2023-10-01T00:00:00Z', modified_before=current_time_iso)
-    
-    # For Square, use the SearchOrders endpoint
-    print("Fetching sales data from Square...")
-    location_id = os.getenv('SQUARE_LOCATION_ID')
-    sq_orders = sq_client.search_orders(location_ids=[location_id]) if location_id else []
-
-    # For Venmo, do something
-    print("Fetching sales data from Venmo...")
-    # TODO - implement
-    vm_orders = []
-
-    all_sales = []
-    
     print(f"Normalizing {len(ss_orders)} Squarespace orders...")
     for order in ss_orders:
         for lineItem in order['lineItems']:
@@ -48,6 +37,10 @@ def fetch_and_log_sales():
             entry = sf.generateRowsData(date, transaction_platform, t_shirt_type, size, retail_price, earnings, comments)
             all_sales.append(entry)
 
+    # For Square, use the SearchOrders endpoint
+    print("Fetching sales data from Square...")
+    location_id = os.getenv('SQUARE_LOCATION_ID')
+    sq_orders = sq_client.search_orders(location_ids=[location_id]) if location_id else []
     print(f"Normalizing {len(sq_orders)} Square orders...")
     for order in sq_orders:
         if order.line_items:
@@ -75,19 +68,36 @@ def fetch_and_log_sales():
             entry = sf.generateRowsData(date, transaction_platform, t_shirt_type, size, retail_price, earnings, comments)
             all_sales.append(entry)
 
+    # For Venmo, fetch recent transactions
+    print("Fetching sales data from Venmo...")
+    vm_orders = [] # vm_client.get_transactions(limit=50)
     print(f"Normalizing {len(vm_orders)} Venmo orders...") 
-    # TODO - implement
+    for order in vm_orders:
+        print(order) # TODO - debug
 
-    if not all_sales:
-        print("No new sales found. Google sheet was unaffected.")
-        return
+        date = "???"
+        transaction_platform = sf.TransactionPlatform.Venmo
+        t_shirt_type = sf.ItemType.fromVenmo("???")
+        size = sf.Size.fromVenmo("???")
+        retail_price = 0.0
+        earnings = sf.getEarnings(retail_price, sf.TransactionPlatform.Venmo)
+        comments = "Generated from Venmo API and jamn_sales_tracker"
 
+        entry = sf.generateRowsData(date, transaction_platform, t_shirt_type, size, retail_price, earnings, comments)
+        all_sales.append(entry)
+
+    return all_sales
+
+def log_sales(all_sales):
     print(f"Appending {len(all_sales)} sales to Google Sheets...")
 
+    # TODO - debug
     for row in all_sales:
         print(row)
 
+    gs_client = GoogleSheetsClient(credentials_path=os.getenv('GOOGLE_APPLICATION_CREDENTIALS'))
     # gs_client.append_rows(spreadsheet_id=os.getenv('GOOGLE_SHEET_ID'), rows=all_sales)
+
     print(f"Successfully logged {len(all_sales)} sales.")
 
 if __name__ == "__main__":
@@ -95,4 +105,6 @@ if __name__ == "__main__":
     load_dotenv()
     
     print("JAMN Sales Tracker Initialized.")
-    fetch_and_log_sales()
+    all_sales = fetch_sales()
+    log_sales(all_sales)
+    print("JAMN Sales Tracker Complete.")
