@@ -97,21 +97,21 @@ def fetch_sales(days):
 
     return all_sales
 
-def log_sales(all_sales):
-    print(f"Appending {len(all_sales)} sales to Google Sheets...")
+def log_sales(all_sales, update_google_sheet = False):
+    print(f"Logging {len(all_sales)} sales...")
 
-    # TODO - debug
     for row in all_sales:
         print(row)
 
-    gs_client = GoogleSheetsClient(credentials_path=os.getenv('GOOGLE_APPLICATION_CREDENTIALS'))
-    # gs_client.append_rows(spreadsheet_id=os.getenv('GOOGLE_SHEET_ID'), rows=all_sales)
-
-    print(f"Successfully logged {len(all_sales)} sales.")
+    if update_google_sheet and len(all_sales) > 0:
+        gs_client = GoogleSheetsClient(credentials_path=os.getenv('GOOGLE_APPLICATION_CREDENTIALS'))
+        gs_client.append_rows(spreadsheet_id=os.getenv('GOOGLE_SHEET_ID'), rows=all_sales)
+        print(f"Successfully appended {len(all_sales)} sales to Google Sheets.")
 
 def parseArgs():
     parser = argparse.ArgumentParser(description="JAMN Sales Tracker Parser")
     parser.add_argument("-d", "--days", type=int, default=365, help="Last X days you want transactions from. Will get 365 if empty.")
+    parser.add_argument("-gs", "--gs_log", type=bool, default=False, help="Log to Google Sheets. False by default.")
     return parser.parse_args()
 
 if __name__ == "__main__":
@@ -123,5 +123,5 @@ if __name__ == "__main__":
     print(f"Fetching sales data from the last {args.days} days")
 
     all_sales = fetch_sales(args.days)
-    log_sales(all_sales)
+    log_sales(all_sales, args.gs_log)
     print("JAMN Sales Tracker Complete.")
