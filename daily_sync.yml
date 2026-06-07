@@ -1,0 +1,31 @@
+name: Daily Sales Sync
+
+on:
+  schedule:
+    # Runs every day at 8:00 AM UTC
+    - cron: '0 8 * * *'
+  workflow_dispatch: # Allows you to trigger it manually from the GitHub UI
+
+jobs:
+  run-tracker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11' 
+
+      - name: Install Dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run JAMN Sales Tracker
+        env:
+          SQUARESPACE_KEY: ${{ secrets.SQUARESPACE_KEY }}
+          SQUARE_TOKEN: ${{ secrets.SQUARE_TOKEN }}
+          SQUARE_LOCATION_ID: ${{ secrets.SQUARE_LOCATION_ID }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+          GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
+        run: python jamn_sales_tracker.py -d 1 -gs True
