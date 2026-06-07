@@ -4,5 +4,5 @@ Collects sales data from multiple sources and plugs into a spreadsheet for book-
 Usage:
 
 ```
-python jamn_sales_tracker.py
+python jamn_sales_tracker.py [-h] [-d DAYS]
 ```

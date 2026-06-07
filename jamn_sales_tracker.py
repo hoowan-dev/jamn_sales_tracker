@@ -1,5 +1,6 @@
 import os
-from datetime import datetime, timezone
+import argparse
+from datetime import datetime, timezone, timedelta
 from dotenv import load_dotenv
 import formatting.sheets_formatter as sf
 
@@ -9,7 +10,7 @@ from services.square_service import SquareClient
 from services.google_sheets_service import GoogleSheetsClient
 from services.venmo_service import VenmoClient
 
-def fetch_sales():
+def fetch_sales(days):
     print("Initializing clients...")
     
     # 1. Initialize Clients
@@ -19,10 +20,15 @@ def fetch_sales():
 
     all_sales = []
 
+    # Calculate start and end times based on the 'days' argument
+    end_time = datetime.now(timezone.utc)
+    start_time = end_time - timedelta(days=days)
+    current_time_iso = end_time.strftime("%Y-%m-%dT%H:%M:%SZ")
+    start_time_iso = start_time.strftime("%Y-%m-%dT%H:%M:%SZ")
+
     # For Squarespace, fetch orders since the last sync date
-    print("Fetching sales data from Squarespace...")
-    current_time_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    ss_orders = ss_client.get_orders(modified_after='2023-10-01T00:00:00Z', modified_before=current_time_iso)
+    print(f"Fetching sales data from Squarespace for the last {days} days...")
+    ss_orders = ss_client.get_orders(modified_after=start_time_iso, modified_before=current_time_iso)
     print(f"Normalizing {len(ss_orders)} Squarespace orders...")
     for order in ss_orders:
         for lineItem in order['lineItems']:
@@ -38,11 +44,14 @@ def fetch_sales():
             all_sales.append(entry)
 
     # For Square, use the SearchOrders endpoint
-    print("Fetching sales data from Square...")
+    print(f"Fetching sales data from Square for the last {days} days...")
     location_id = os.getenv('SQUARE_LOCATION_ID')
     sq_orders = sq_client.search_orders(location_ids=[location_id]) if location_id else []
-    print(f"Normalizing {len(sq_orders)} Square orders...")
-    for order in sq_orders:
+    
+    # Filter Square orders based on the start date
+    sq_orders_filtered = [order for order in sq_orders if order.created_at[:19] >= start_time_iso[:19]]
+    print(f"Normalizing {len(sq_orders_filtered)} Square orders...")
+    for order in sq_orders_filtered:
         if order.line_items:
             for line_item in order.line_items:
                 date = sf.formatDate(order.created_at, sf.TransactionPlatform.Square)
@@ -100,11 +109,19 @@ def log_sales(all_sales):
 
     print(f"Successfully logged {len(all_sales)} sales.")
 
+def parseArgs():
+    parser = argparse.ArgumentParser(description="JAMN Sales Tracker Parser")
+    parser.add_argument("-d", "--days", type=int, default=365, help="Last X days you want transactions from. Will get 365 if empty.")
+    return parser.parse_args()
+
 if __name__ == "__main__":
     # Load environment variables from .env file
     load_dotenv()
     
     print("JAMN Sales Tracker Initialized.")
-    all_sales = fetch_sales()
+    args = parseArgs()
+    print(f"Fetching sales data from the last {args.days} days")
+
+    all_sales = fetch_sales(args.days)
     log_sales(all_sales)
     print("JAMN Sales Tracker Complete.")
