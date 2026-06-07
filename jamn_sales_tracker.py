@@ -8,7 +8,7 @@ import formatting.sheets_formatter as sf
 from services.squarespace_service import SquarespaceClient
 from services.square_service import SquareClient
 from services.google_sheets_service import GoogleSheetsClient
-from services.venmo_service import VenmoClient
+# from services.venmo_service import VenmoClient
 
 def fetch_sales(days):
     print("Initializing clients...")
