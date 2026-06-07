@@ -2,3 +2,4 @@ python-dotenv
 gspread
 requests
 squareup
+venmo-api
